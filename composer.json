@@ -1,0 +1,34 @@
+{
+    "name": "mcris112/file-manager-system",
+    "description": "Laravel Package for File System Manager, administrate and get the disk",
+    "keywords": ["laravel", "laravel-packages", "filesystem", "file system manager"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "MCris112",
+            "email": "informes@darkredgm.com",
+            "homepage": "https://github.com/mcris112"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "MCris112\\FileSystemManager\\": "src/",
+            "MCris112\\FileSystemManager\\Database\\Factories\\": "database/factories/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "MCris112\\FileSystemManager\\FileSystemManagerServiceProvider"
+            ]
+        }
+    },
+    "require": {
+        "php": "^8.1",
+        "ext-gd": "*",
+        "intervention/image": "^3.5"
+    },
+    "config": {
+        "sort-packages": true
+    }
+}
