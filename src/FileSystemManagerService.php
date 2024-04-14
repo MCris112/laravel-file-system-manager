@@ -6,6 +6,7 @@ use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use MCris112\FileSystemManager\Exceptions\FmFileNotFoundException;
 use MCris112\FileSystemManager\Models\FmFile;
 
 class FileSystemManagerService
@@ -40,11 +41,33 @@ class FileSystemManagerService
         return FmFile::sum('size');
     }
 
-    public function get($id)
+    /**
+     * Find a file by id or full path (folder + filename)
+     * @param int|string $idOrPath
+     * @return FmFile
+     * @throws FmFileNotFoundException
+     */
+    public function find(int|string $idOrPath): FmFile
     {
-        return FmFile::with([
-            'metadataInt', 'metadataVarchar', 'metadataDateTime', 'metadataDecimal'
-        ])->whereId($id)->first();
+        return \Cache::rememberForever('fm_file_find_'.str($idOrPath)->slug(), function() use ($idOrPath){
+            $query = FmFile::with([
+                'metadataInt', 'metadataVarchar', 'metadataDateTime', 'metadataDecimal'
+            ]);
+
+            if(is_string($idOrPath))
+            {
+                $query->whereDisk($this->disk)->where( \DB::raw('concat(path_folder, path_filename)'), $idOrPath);
+            }else{
+                $query->whereId($idOrPath);
+            }
+
+            /** @var FmFile|null $model */
+            $model = $query->first();
+
+            if(!$model) throw new FmFileNotFoundException;
+
+            return $model;
+        });
     }
 
     /**
