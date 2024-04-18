@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create( 'fm_files', function (Blueprint $table){
             $table->id();
-            $table->unsignedBigInteger('fm_directory_id')->nullable();
+            $table->unsignedBigInteger('fm_folder_id')->nullable();
             $table->string('name');
             $table->string('path_filename');
             $table->string('path_folder');
@@ -29,7 +29,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->foreign('parent_id')->references('id')->on('fm_files');
-            $table->foreign('fm_directory_id')->references('id')->on('fm_directories');
+            $table->foreign('fm_folder_id')->references('id')->on('fm_folders');
             $table->foreign('created_by')->references('id')->on('users');
         });
     }

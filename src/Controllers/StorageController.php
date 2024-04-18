@@ -16,7 +16,7 @@ class StorageController extends Controller
      */
     public function index(string $disk, string $path)
     {
-        $model = FileSystemManager::disk($disk)->find($path);
+        $model = FileSystemManager::disk($disk)->file()->find($path);
 
         /** @var User|null $authUser */
         $authUser = config('filesystemmanager.auth.user')() ?? null;
@@ -24,5 +24,10 @@ class StorageController extends Controller
         if(!$model->is_public && !$authUser?->canViewFmFiePrivate() ) throw new FmFileNotFoundException;
 
         return \Storage::disk($disk)->response($path);
+    }
+
+    public function avatar($disk, string $filename)
+    {
+        return \Storage::disk($disk)->response('users/'.$filename);
     }
 }

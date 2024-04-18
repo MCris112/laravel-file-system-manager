@@ -8,7 +8,7 @@ class FileSystemManagerServiceProvider extends ServiceProvider
     public function register()
     {
         $this->app->bind('fileSystemManager', function(){
-            return new FileSystemManagerService();
+            return new FileSystemManagerService(config('filesystems.default'));
         });
 
         $this->mergeConfigFrom(

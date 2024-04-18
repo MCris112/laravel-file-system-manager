@@ -2,6 +2,7 @@
 
 namespace MCris112\FileSystemManager\Models;
 
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
@@ -13,12 +14,13 @@ use MCris112\FileSystemManager\Models\Metadata\FmMetadataDatetime;
 use MCris112\FileSystemManager\Models\Metadata\FmMetadataDecimal;
 use MCris112\FileSystemManager\Models\Metadata\FmMetadataInt;
 use MCris112\FileSystemManager\Models\Metadata\FmMetadataVarchar;
+use MCris112\FileSystemManager\Observers\FmFileObserver;
 
 /**
  * MCris112\FileSystemManager\Models\FmFile
  *
  * @property int $id
- * @property int|null $fm_directory_id
+ * @property int|null $fm_folder_id
  * @property string $name
  * @property string $path_filename
  * @property string $path_folder
@@ -32,7 +34,7 @@ use MCris112\FileSystemManager\Models\Metadata\FmMetadataVarchar;
  * @property int $created_by
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \MCris112\FileSystemManager\Models\FmDirectory|null $directory
+ * @property-read \MCris112\FileSystemManager\Models\FmFolder|null $folder
  * @property-read \Illuminate\Database\Eloquent\Collection<int, FmMetadataDatetime> $metadataDatetime
  * @property-read int|null $metadata_datetime_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, FmMetadataDecimal> $metadataDecimal
@@ -51,7 +53,7 @@ use MCris112\FileSystemManager\Models\Metadata\FmMetadataVarchar;
  * @method static \Illuminate\Database\Eloquent\Builder|FmFile whereCreatedBy($value)
  * @method static \Illuminate\Database\Eloquent\Builder|FmFile whereDisk($value)
  * @method static \Illuminate\Database\Eloquent\Builder|FmFile whereExtension($value)
- * @method static \Illuminate\Database\Eloquent\Builder|FmFile whereFmDirectoryId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|FmFile whereFmFolderId($value)
  * @method static \Illuminate\Database\Eloquent\Builder|FmFile whereId($value)
  * @method static \Illuminate\Database\Eloquent\Builder|FmFile whereIsParent()
  * @method static \Illuminate\Database\Eloquent\Builder|FmFile whereIsPublic($value)
@@ -66,12 +68,14 @@ use MCris112\FileSystemManager\Models\Metadata\FmMetadataVarchar;
  * @method static \Illuminate\Database\Eloquent\Builder|FmFile withMetadata()
  * @mixin \Eloquent
  */
+#[ObservedBy([FmFileObserver::class])]
 class FmFile extends Model
 {
 
     use HasFactory;
 
     protected $fillable = [
+        'fm_folder_id',
         'name',
         'path_filename',
         'path_folder',
@@ -143,9 +147,9 @@ class FmFile extends Model
         return new FmFileCollection($models);
     }
 
-    public function directory()
+    public function folder()
     {
-        return $this->belongsTo(FmDirectory::class, 'fm_directory_id', 'id');
+        return $this->belongsTo(FmFolder::class,'fm_folder_id');
     }
 
     public function scopeWithMetadata($query)
@@ -187,6 +191,6 @@ class FmFile extends Model
 
     public function scopeWhereIsParent($query)
     {
-        return $query->where('is_public', 1);
+        return $query->where('parent_id', null);
     }
 }

@@ -2,72 +2,67 @@
 
 namespace MCris112\FileSystemManager;
 
-use Illuminate\Filesystem\FilesystemAdapter;
+use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
-use MCris112\FileSystemManager\Exceptions\FmFileNotFoundException;
+use MCris112\FileSystemManager\Base\FileSystemManagerBase;
+use MCris112\FileSystemManager\Exceptions\AvatarManagerIsNotSet;
+use MCris112\FileSystemManager\Manager\AvatarFileSystemManager;
+use MCris112\FileSystemManager\Manager\FileManager;
+use MCris112\FileSystemManager\Manager\FolderManager;
 use MCris112\FileSystemManager\Models\FmFile;
+use MCris112\FileSystemManager\Models\FmFolder;
 
-class FileSystemManagerService
+class FileSystemManagerService extends FileSystemManagerBase
 {
 
-    protected FilesystemAdapter $adapter;
-
-    public function __construct(private ?string $disk = null)
+    public function url(FmFile|string $modelOrPath): string
     {
-        $this->adapter = Storage::disk($this->disk);
-    }
+        $path = $modelOrPath;
 
-    public function list(array $search = []): \Illuminate\Contracts\Pagination\LengthAwarePaginator
-    {
-        $query = FmFile::whereIsParent()->whereDoesntHave('directory');
+        if($modelOrPath instanceof FmFile) $path = $modelOrPath->path_folder.$modelOrPath->path_filename;
 
-        if($this->disk)
-            $query->where('disk', $this->disk);
-
-        if (count($search) > 0)
-            $query->where($search);
-
-        return $query->paginate();
+        return  config('app.url').'/'.'storage/'.$this->disk.'/'.$path;
     }
 
     /**
-     * Get the current used size
+     * Get all used size based on disk with Files and Avatars
      * @return int
      */
-    public static function size(): int
+    public function used(): int
     {
-        return FmFile::sum('size');
+        $avatar = 0;
+
+        try {
+            $avatar = $this->avatar()->used();
+        }catch (\Exception $e) {}
+
+        return $this->file()->used() + $avatar;
     }
 
     /**
-     * Find a file by id or full path (folder + filename)
-     * @param int|string $idOrPath
-     * @return FmFile
-     * @throws FmFileNotFoundException
+     * Get the storage size
+     * @return int|string
      */
-    public function find(int|string $idOrPath): FmFile
+    public function size()
     {
-        return \Cache::rememberForever('fm_file_find_'.str($idOrPath)->slug(), function() use ($idOrPath){
-            $query = FmFile::with([
-                'metadataInt', 'metadataVarchar', 'metadataDateTime', 'metadataDecimal'
-            ]);
+        /** @var string|int $value */
+        $value = config('filesystemmanager.storage.size.'.$this->disk);
 
-            if(is_string($idOrPath))
-            {
-                $query->whereDisk($this->disk)->where( \DB::raw('concat(path_folder, path_filename)'), $idOrPath);
-            }else{
-                $query->whereId($idOrPath);
-            }
+        dump($this->_convertToBytes($value));
+        if(is_string($value))
+        return $this->_convertToBytes($value);
 
-            /** @var FmFile|null $model */
-            $model = $query->first();
+        return $value ?? 0;
+    }
 
-            if(!$model) throw new FmFileNotFoundException;
-
-            return $model;
-        });
+    /**
+     * How much storage left
+     * @return int
+     */
+    public function left(): int
+    {
+        return $this->size() - $this->used();
     }
 
     /**
@@ -92,7 +87,7 @@ class FileSystemManagerService
      * @return FmFile
      * @throws \Throwable
      */
-    public function save(UploadedFile $file, bool $isPublic, int $createdBy, string $folder, ?string $name, ?\Closure $doAfterSaveFile = null,): FmFile
+    public function save(UploadedFile $file, bool $isPublic, int $createdBy, string $folder, ?string $name, ?\Closure $doAfterSaveFile = null): FmFile
     {
         $fileContent = new FmFileContent($file, $folder, $name, $this->disk);
          // Save the file and get the model
@@ -123,5 +118,71 @@ class FileSystemManagerService
         call_user_func($doAfterSaveFile, $fileContent, $model );
 
         return $model;
+    }
+
+
+    /***************************************************
+     *
+     *  CONTENT FUNCTIONS
+     *
+     */
+
+    /**
+     * Get this to show it into your file manager interface
+     * @param int|null $load Number of how many files will be loaded
+     * @return FileManagerContent
+     */
+    public function content(?int $load = null): FileManagerContent
+    {
+        return new FileManagerContent(
+            FmFolder::whereDisk($this->disk)->whereIsParent()->withMetadata()->get(),
+            FmFile::whereDisk($this->disk)->whereIsParent()->whereDoesntHave('folder')->paginate($load)
+        );
+    }
+
+    /**
+     * Access to Folder Manager
+     * @return FolderManager
+     */
+    public function folder(): FolderManager
+    {
+        return new FolderManager($this->disk);
+    }
+
+    /**
+     * Access to File Manager
+     * @return FileManager
+     */
+    public function file(): FileManager
+    {
+        return new FileManager($this->disk);
+    }
+
+    /**
+     * Access to Avatar Manager
+     * @return AvatarFileSystemManager
+     * @throws AvatarManagerIsNotSet
+     */
+    public function avatar(): AvatarFileSystemManager
+    {
+        return new AvatarFileSystemManager($this->disk);
+    }
+
+    private function _convertToBytes(string $from): ?int {
+        $units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
+        $number = substr($from, 0, -2);
+        $suffix = strtoupper(substr($from,-2));
+
+        //B or no suffix
+        if(is_numeric(substr($suffix, 0, 1))) {
+            return preg_replace('/[^\d]/', '', $from);
+        }
+
+        $exponent = array_flip($units)[$suffix] ?? null;
+        if($exponent === null) {
+            return null;
+        }
+
+        return $number * (1024 ** $exponent);
     }
 }

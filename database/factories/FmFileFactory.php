@@ -20,7 +20,7 @@ class FmFileFactory extends Factory
             'name' => $name,
             'path_filename' => str($name)->slug(),
             'path_folder' => 'test/',
-            'disk' => config('filesystem.default') ?? 'local',
+            'disk' => fake()->randomElement( config('filesystems.disks',) )['driver'],
             'size' => fake()->numberBetween(9000000, 1000000),
             'type' => fake()->randomElement(FmFileType::cases())->value,
             'mimetype' => 'image/jpeg',
