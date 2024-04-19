@@ -29,6 +29,8 @@ class FmFileObserver
     public function deleted(FmFile $model): void
     {
         $this->updateCached($model);
+
+        \Storage::disk($model->disk)->delete($model->getPath());
     }
 
     /**

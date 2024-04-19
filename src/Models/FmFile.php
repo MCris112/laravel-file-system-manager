@@ -195,6 +195,9 @@ class FmFile extends Model
         return $this->hasMany(FmFile::class, 'parent_id');
     }
 
+    /**
+     * @throws \Throwable
+     */
     public function variation(FmFileSize|string $size, int $createdBy, int $width = 0, int $height = 0)
     {
         if($this->type != FmFileType::IMAGE->value) throw new \InvalidArgumentException("File is not an Image");
@@ -220,14 +223,13 @@ class FmFile extends Model
             $height == 0 ? $sizeType->getHeight(): $height
         );
 
-        return FileSystemManager::save(
+        return FileSystemManager::file($this)->save(
             $image->encode(new AutoEncoder($this->extension))->toDataUri(),
             $size,
             $this->is_public,
             $createdBy,
             $this->path_folder,
-            $this->name.' '.($size->value ?? $size),
-            $this->id
+            $this->name.' '.($size->value ?? $size)
         );
 
     }

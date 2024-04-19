@@ -25,13 +25,13 @@ return new class extends Migration
 
             $table->unsignedBigInteger('parent_id')->nullable();
 
-            $table->unsignedBigInteger('created_by');
+            $table->unsignedBigInteger('created_by')->nullable();
 
             $table->timestamps();
 
-            $table->foreign('parent_id')->references('id')->on('fm_files');
-            $table->foreign('fm_folder_id')->references('id')->on('fm_folders');
-            $table->foreign('created_by')->references('id')->on('users');
+            $table->foreign('parent_id')->references('id')->on('fm_files')->cascadeOnDelete()->cascadeOnDelete();
+            $table->foreign('fm_folder_id')->references('id')->on('fm_folders')->nullOnDelete();
+            $table->foreign('created_by')->references('id')->on('users')->cascadeOnUpdate()->nullOnDelete();
         });
     }
 

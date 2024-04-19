@@ -2,14 +2,25 @@
 
 return [
     "storage" => [
+        /********************************
+         *
+         * Define here what storage disk drivers should be supported
+         * and the storage size has each driver
+         *
+         */
         'size' => [
             "local" => env('FM_STORAGE_LOCAL_SIZE', "1GB"),
             "public" => env('FM_STORAGE_PUBLIC_SIZE', "1GB"),
-            "s3" => env('FM_STORAGE_S3_SIZE', 0),
+            //"s3" => env('FM_STORAGE_S3_SIZE', 0),
         ],
     ],
 
     "sizes" => [
+        /********************************
+         *
+         * Define the sizes to use for variations
+         *
+         */
         'video' => [
             "width" => 1200,
             "height" => 720,
@@ -39,7 +50,7 @@ return [
      *
      */
     "user" => [
-        "avatar" => true,
+        "avatar" => false,
         "width" => 512,
         "height" => 512,
         "quality" => 80,

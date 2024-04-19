@@ -2,12 +2,11 @@
 
 namespace MCris112\FileSystemManager;
 
+use App\Models\User;
 use Illuminate\Http\File;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\DB;
 use MCris112\FileSystemManager\Base\FileSystemManagerBase;
-use MCris112\FileSystemManager\Enums\FmFileSize;
 use MCris112\FileSystemManager\Exceptions\AvatarManagerIsNotSet;
 use MCris112\FileSystemManager\Manager\AvatarFileSystemManager;
 use MCris112\FileSystemManager\Manager\FileManager;
@@ -24,7 +23,7 @@ class FileSystemManagerService extends FileSystemManagerBase
 
         if($modelOrPath instanceof FmFile) $path = $modelOrPath->path_folder.$modelOrPath->path_filename;
 
-        return  config('app.url').'/'.'storage/'.$this->disk.'/'.$path;
+        return url('storage/'.$this->disk.'/'.$path);
     }
 
     /**
@@ -44,9 +43,9 @@ class FileSystemManagerService extends FileSystemManagerBase
 
     /**
      * Get the storage size
-     * @return int|string
+     * @return int
      */
-    public function size()
+    public function size(): int
     {
         /** @var string|int $value */
         $value = config('filesystemmanager.storage.size.'.$this->disk);
@@ -77,55 +76,6 @@ class FileSystemManagerService extends FileSystemManagerBase
         return new self($name);
     }
 
-
-    /**
-     * Save the file information
-     * @param UploadedFile|string $file
-     * @param FmFileSize $size
-     * @param bool $isPublic
-     * @param int $createdBy
-     * @param string $folder
-     * @param ?string $name If name is not set, It will be the filename
-     * @param \Closure|null $doAfterSaveFile Do something after save function( FmFileContent $fileContent, FmFile $model)
-     * @return FmFile
-     * @throws \Throwable
-     */
-    public function save(UploadedFile|string $file, FmFileSize|string $size, bool $isPublic, int $createdBy, string $folder, ?string $name, ?int $parentId = null, ?\Closure $doAfterSaveFile = null): FmFile
-    {
-        $fileContent = new FmFileContent($file, $folder, $name, $this->disk);
-         // Save the file and get the model
-        $model = Db::transaction( function () use ($isPublic, $fileContent, $file, $createdBy, $size, $parentId) {
-            $model = FmFile::saveAsModel(
-                $fileContent->getName(),
-                $fileContent->getDisk(),
-                $fileContent->getFolder(),
-                $fileContent->getFilename(),
-                $fileContent->getSize(),
-                $size,
-                $fileContent->getFileType(),
-                $fileContent->getMimeType(),
-                $fileContent->getExtension(),
-                $isPublic,
-                $createdBy,
-                $fileContent->getMetadata(),
-                $parentId
-            );
-
-            $fileContent->getFile()->storeAs($fileContent->getFullPath(), [
-                'disk' => $this->disk,
-            ]);
-
-            return $model;
-        });
-
-        //If function exists, do something with the data given
-        if($doAfterSaveFile)
-        call_user_func($doAfterSaveFile, $fileContent, $model );
-
-        return $model;
-    }
-
-
     /***************************************************
      *
      *  CONTENT FUNCTIONS
@@ -147,20 +97,22 @@ class FileSystemManagerService extends FileSystemManagerBase
 
     /**
      * Access to Folder Manager
+     * @param FmFolder|int|null $parent
      * @return FolderManager
      */
-    public function folder(): FolderManager
+    public function folder(FmFolder|int|null $parent = null): FolderManager
     {
-        return new FolderManager($this->disk);
+        return new FolderManager($this->disk, $parent);
     }
 
     /**
      * Access to File Manager
+     * @param FmFile|int|null $parent
      * @return FileManager
      */
-    public function file(): FileManager
+    public function file(FmFile|int|null $parent = null): FileManager
     {
-        return new FileManager($this->disk);
+        return new FileManager($this->disk, $parent);
     }
 
     /**
@@ -168,12 +120,12 @@ class FileSystemManagerService extends FileSystemManagerBase
      * @return AvatarFileSystemManager
      * @throws AvatarManagerIsNotSet
      */
-    public function avatar(): AvatarFileSystemManager
+    public function avatar(?User $user = null): AvatarFileSystemManager
     {
-        return new AvatarFileSystemManager($this->disk);
+        return new AvatarFileSystemManager($this->disk, $user);
     }
 
-    private function _convertToBytes(string $from): ?int {
+    private function _convertToBytes(string $from): int {
         $units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
         $number = substr($from, 0, -2);
         $suffix = strtoupper(substr($from,-2));
@@ -185,12 +137,17 @@ class FileSystemManagerService extends FileSystemManagerBase
 
         $exponent = array_flip($units)[$suffix] ?? null;
         if($exponent === null) {
-            return null;
+            return 0;
         }
 
         return $number * (1024 ** $exponent);
     }
 
+    /**
+     * Convert a base64 encoded into a UploadedFile
+     * @param string $base64File
+     * @return UploadedFile
+     */
     public function fromBase64(string $base64File): UploadedFile
     {
 

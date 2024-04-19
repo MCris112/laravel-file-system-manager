@@ -28,6 +28,10 @@ class AvatarFileSystemManager extends FileSystemManagerBase
         return config('app.url') . '/' .'storage/'.$this->disk.'/'.$this->getPath();
     }
 
+    /**
+     * @param UploadedFile|null $file
+     * @return User
+     */
     public function create(?UploadedFile $file = null): User
     {
         $storage = Storage::disk($this->disk);
