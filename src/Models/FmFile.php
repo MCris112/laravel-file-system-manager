@@ -3,6 +3,7 @@
 namespace MCris112\FileSystemManager\Models;
 
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
@@ -42,40 +43,32 @@ use MCris112\FileSystemManager\Observers\FmFileObserver;
  * @property-read \MCris112\FileSystemManager\Models\FmFolder|null $folder
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \MCris112\FileSystemManager\Models\FmMetadata> $metadata
  * @property-read int|null $metadata_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, FmMetadataDatetime> $metadataDatetime
- * @property-read int|null $metadata_datetime_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, FmMetadataDecimal> $metadataDecimal
- * @property-read int|null $metadata_decimal_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, FmMetadataInt> $metadataInt
- * @property-read int|null $metadata_int_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, FmMetadataVarchar> $metadataVarchar
- * @property-read int|null $metadata_varchar_count
  * @property-read FmFileCollection<int, FmFile> $variations
  * @property-read int|null $variations_count
  * @method static FmFileCollection<int, static> all($columns = ['*'])
  * @method static \MCris112\FileSystemManager\Database\Factories\FmFileFactory factory($count = null, $state = [])
  * @method static FmFileCollection<int, static> get($columns = ['*'])
- * @method static \Illuminate\Database\Eloquent\Builder|FmFile newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder|FmFile newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder|FmFile query()
- * @method static \Illuminate\Database\Eloquent\Builder|FmFile whereCreatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder|FmFile whereCreatedBy($value)
- * @method static \Illuminate\Database\Eloquent\Builder|FmFile whereDisk($value)
- * @method static \Illuminate\Database\Eloquent\Builder|FmFile whereExtension($value)
- * @method static \Illuminate\Database\Eloquent\Builder|FmFile whereFmFolderId($value)
- * @method static \Illuminate\Database\Eloquent\Builder|FmFile whereId($value)
- * @method static \Illuminate\Database\Eloquent\Builder|FmFile whereIsParent()
- * @method static \Illuminate\Database\Eloquent\Builder|FmFile whereIsPublic($value)
- * @method static \Illuminate\Database\Eloquent\Builder|FmFile whereMimetype($value)
- * @method static \Illuminate\Database\Eloquent\Builder|FmFile whereName($value)
- * @method static \Illuminate\Database\Eloquent\Builder|FmFile whereParentId($value)
- * @method static \Illuminate\Database\Eloquent\Builder|FmFile wherePathFilename($value)
- * @method static \Illuminate\Database\Eloquent\Builder|FmFile wherePathFolder($value)
- * @method static \Illuminate\Database\Eloquent\Builder|FmFile whereSize($value)
- * @method static \Illuminate\Database\Eloquent\Builder|FmFile whereSizeType($value)
- * @method static \Illuminate\Database\Eloquent\Builder|FmFile whereType($value)
- * @method static \Illuminate\Database\Eloquent\Builder|FmFile whereUpdatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder|FmFile withMetadata()
+ * @method static Builder|FmFile newModelQuery()
+ * @method static Builder|FmFile newQuery()
+ * @method static Builder|FmFile query()
+ * @method static Builder|FmFile whereCreatedAt($value)
+ * @method static Builder|FmFile whereCreatedBy($value)
+ * @method static Builder|FmFile whereDisk($value)
+ * @method static Builder|FmFile whereExtension($value)
+ * @method static Builder|FmFile whereFmFolderId($value)
+ * @method static Builder|FmFile whereId($value)
+ * @method static Builder|FmFile whereIsParent()
+ * @method static Builder|FmFile whereIsPublic($value)
+ * @method static Builder|FmFile whereMimetype($value)
+ * @method static Builder|FmFile whereName($value)
+ * @method static Builder|FmFile whereParentId($value)
+ * @method static Builder|FmFile wherePathFilename($value)
+ * @method static Builder|FmFile wherePathFolder($value)
+ * @method static Builder|FmFile whereSize($value)
+ * @method static Builder|FmFile whereSizeType($value)
+ * @method static Builder|FmFile whereType($value)
+ * @method static Builder|FmFile whereUpdatedAt($value)
+ * @method static Builder|FmFile withVariation(\MCris112\FileSystemManager\Enums\FmFileSize $size)
  * @mixin \Eloquent
  */
 #[ObservedBy([FmFileObserver::class])]
@@ -121,7 +114,7 @@ class FmFile extends Model
         string $folder,
         string $filename,
         int $size,
-        FmFileSize $sizeType,
+        FmFileSize|string $sizeType,
         FmFileType $type,
         string $mimetype,
         string $extension,
@@ -166,55 +159,35 @@ class FmFile extends Model
         return new FmFileCollection($models);
     }
 
+    public function scopeWhereIsParent($query)
+    {
+        return $query->where('parent_id', null);
+    }
+
+    public function scopeWithVariation(Builder $query, FmFileSize|string|array $size): Builder
+    {
+        $sizeType = $size;
+        if($size instanceof FmFileSize) $sizeType = [$size->value];
+        if(is_string($size)) $sizeType  = [$size];
+
+        for ($i = 0; $i < count($sizeType); $i++)
+        {
+            if($sizeType[$i] instanceof FmFileSize) $sizeType[$i] = $sizeType[$i]->value;
+        }
+
+        return $query->with('variations', function($q) use ($sizeType){
+            return $q->whereIn('size_type', $sizeType);
+        });
+    }
+
     public function folder()
     {
         return $this->belongsTo(FmFolder::class,'fm_folder_id');
     }
 
-    public function scopeWithMetadata($query)
-    {
-        return $query->with(['metadataInt', 'metadataVarchar', 'metadataDatetime', 'metadataDecimal']);
-    }
-
-    public function metadataInt(): \Illuminate\Database\Eloquent\Relations\HasMany
-    {
-        return $this->hasMany(FmMetadataInt::class);
-    }
-
-    public function metadataVarchar()
-    {
-        return $this->hasMany(FmMetadataVarchar::class);
-    }
-
-    public function metadataDatetime()
-    {
-        return $this->hasMany(FmMetadataDatetime::class);
-    }
-
-    public function metadataDecimal()
-    {
-        return $this->hasMany(FmMetadataDecimal::class);
-    }
-
     public function metadata()
     {
         return $this->hasMany(FmMetadata::class);
-    }
-//    public function metadata()
-//    {
-//        $metadata = new Collection;
-//
-//        $metadata = $metadata->concat($this->metadataInt)
-//            ->concat($this->metadataVarchar)
-//            ->concat($this->metadataDatetime)
-//            ->concat($this->metadataDecimal);
-//
-//        return $metadata;
-//    }
-
-    public function scopeWhereIsParent($query)
-    {
-        return $query->where('parent_id', null);
     }
 
     public function variations()
@@ -222,25 +195,29 @@ class FmFile extends Model
         return $this->hasMany(FmFile::class, 'parent_id');
     }
 
-    public function variation(FmFileSize $size, int $createdBy, int $width = 0, int $height = 0)
+    public function variation(FmFileSize|string $size, int $createdBy, int $width = 0, int $height = 0)
     {
         if($this->type != FmFileType::IMAGE->value) throw new \InvalidArgumentException("File is not an Image");
-        if( $size == FmFileSize::FULL ) throw new \InvalidArgumentException("This has to be a variation");
+        if( $size instanceof FmFileSize && $size == FmFileSize::FULL ) throw new \InvalidArgumentException("This has to be a variation");
         if($this->parent_id) throw new \InvalidArgumentException("This is already a variation");
 
         if(!$this->relationLoaded('variations')) $this->load('variations');
 
 
         if($this->variations->filter(function (FmFile $file) use ($size) {
-            return $file->size_type == $size->value;
+            return $file->size_type == ($size->value ?? $size);
         })->first()) throw new \InvalidArgumentException("Variation already exists");
 
         $manager = ImageManager::gd();
         $image = $manager->read(\Storage::disk($this->disk)->get($this->getPath()));
 
+        $sizeType = $size;
+        if(is_string($sizeType)) $sizeType = FmFileSize::fromConfig($size);
+
+
         $image = $image->cover(
-            $width == 0 ? $size->getSize()->getWidth() : $width,
-            $height == 0 ? $size->getSize()->getHeight() : $height
+            $width == 0 ? $sizeType->getWidth() : $width,
+            $height == 0 ? $sizeType->getHeight(): $height
         );
 
         return FileSystemManager::save(
@@ -249,7 +226,7 @@ class FmFile extends Model
             $this->is_public,
             $createdBy,
             $this->path_folder,
-            $this->name.' '.$size->value.'.'.$this->extension,
+            $this->name.' '.($size->value ?? $size),
             $this->id
         );
 

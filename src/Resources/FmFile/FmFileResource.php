@@ -4,6 +4,8 @@ namespace MCris112\FileSystemManager\Resources\FmFile;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use MCris112\FileSystemManager\Enums\FmFileSize;
+use MCris112\FileSystemManager\Models\FmFile;
 use MCris112\FileSystemManager\Models\Metadata\FmMetadataInt;
 
 class FmFileResource extends JsonResource
@@ -19,7 +21,11 @@ class FmFileResource extends JsonResource
             $metadata[$item->attr] = $item->value;
         }
 
-        return [
+        $variations = [];
+
+
+
+        $data = [
             'id' => $this->id,
             'name' => $this->name,
 
@@ -36,15 +42,23 @@ class FmFileResource extends JsonResource
                 ],
                 'url' => config('app.url').'/storage/'.$this->disk.'/'.$this->path_folder.$this->path_filename,
 
-                'metadata' => $this->metadata
+                'metadata' => $metadata
             ],
-
-            'variations' => $this->variations,
 
             'timestamps' => [
                 'createdAt' => $this->created_at,
                 'updatedAt' => $this->updated_at
             ]
         ];
+
+        if($this->size_type == FmFileSize::FULL->value)
+        {
+            $data['variations'] = [];
+            /** @var FmFile $variation */
+            foreach ($this->variations as $variation)
+                $data['variations'][$variation->size_type] = new FmFileResource($variation);
+        }
+
+        return $data;
     }
 }

@@ -3,6 +3,7 @@
 namespace MCris112\FileSystemManager\Enums;
 
 use MCris112\FileSystemManager\FmTypeSize;
+use PHPUnit\Event\InvalidArgumentException;
 
 enum FmFileSize: string
 {
@@ -22,5 +23,14 @@ enum FmFileSize: string
             self::SQUARE => new FmTypeSize( config('filesystemmanager.sizes.square.width'), config('filesystemmanager.sizes.square.height') ),
             self::VIDEO => new FmTypeSize( config('filesystemmanager.sizes.video.width'), config('filesystemmanager.sizes.video.height') ),
         };
+    }
+
+    public static function fromConfig(string $name): FmTypeSize
+    {
+
+        $config = config('filesystemmanager.sizes.'.$name);
+        if (!$config) throw new InvalidArgumentException($name." is not defined");
+
+        return new FmTypeSize( $config["width"], $config["height"] );
     }
 }

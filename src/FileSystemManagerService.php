@@ -90,7 +90,7 @@ class FileSystemManagerService extends FileSystemManagerBase
      * @return FmFile
      * @throws \Throwable
      */
-    public function save(UploadedFile|string $file, FmFileSize $size, bool $isPublic, int $createdBy, string $folder, ?string $name, ?int $parentId = null, ?\Closure $doAfterSaveFile = null): FmFile
+    public function save(UploadedFile|string $file, FmFileSize|string $size, bool $isPublic, int $createdBy, string $folder, ?string $name, ?int $parentId = null, ?\Closure $doAfterSaveFile = null): FmFile
     {
         $fileContent = new FmFileContent($file, $folder, $name, $this->disk);
          // Save the file and get the model
