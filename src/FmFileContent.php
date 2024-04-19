@@ -6,6 +6,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Intervention\Image\ImageManager;
 use MCris112\FileSystemManager\Enums\FmFileType;
+use MCris112\FileSystemManager\Facades\FileSystemManager;
 use MCris112\FileSystemManager\Models\FmFile;
 
 class FmFileContent
@@ -18,22 +19,32 @@ class FmFileContent
 
     private FmFileContentMetadata $metadata;
 
+    private UploadedFile $file;
 
-    public function __construct(private UploadedFile $file, private string $folder, private ?string $name = null, private readonly ?string $disk = null)
+    public function __construct(UploadedFile|string $content, private string $folder, private ?string $name = null, private readonly ?string $disk = null)
     {
+
+
+        if(!$content instanceof UploadedFile)
+        {
+
+            $this->file = FileSystemManager::fromBase64($content);
+        }else{
+            $this->file = $content;
+        }
 
         // Set the filename of the archive
         if(!$this->name)
-        $this->name = $file->getClientOriginalName();
+        $this->name = $this->file->getClientOriginalName();
 
-        $this->size = $file->getSize();
-        $this->mimeType = $file->getClientMimeType();
+        $this->size = $this->file->getSize();
+        $this->mimeType = $this->file->getClientMimeType();
 
-        $this->extension = $file->getClientOriginalExtension();
+        $this->extension = explode('/', $this->mimeType )[1];
 
         if ( $this->getFileType() == FmFileType::IMAGE )
         {
-            $manager = ImageManager::gd()->read( $file->getContent() );
+            $manager = ImageManager::gd()->read( $this->file->getContent() );
 
             $this->metadata = new FmFileContentMetadata(
                 $manager->width(),
@@ -42,6 +53,14 @@ class FmFileContent
         }
     }
 
+
+    /**
+     * @return UploadedFile
+     */
+    public function getFile(): UploadedFile
+    {
+        return $this->file;
+    }
     /**
      * @return string|null
      */

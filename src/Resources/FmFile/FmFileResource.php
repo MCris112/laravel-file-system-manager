@@ -4,12 +4,21 @@ namespace MCris112\FileSystemManager\Resources\FmFile;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use MCris112\FileSystemManager\Models\Metadata\FmMetadataInt;
 
 class FmFileResource extends JsonResource
 {
 
     public function toArray(Request $request): array
     {
+        $metadata = [];
+
+        /** @var FmMetadataInt $item */
+        foreach ($this->metadata as $item)
+        {
+            $metadata[$item->attr] = $item->value;
+        }
+
         return [
             'id' => $this->id,
             'name' => $this->name,
@@ -29,6 +38,8 @@ class FmFileResource extends JsonResource
 
                 'metadata' => $this->metadata
             ],
+
+            'variations' => $this->variations,
 
             'timestamps' => [
                 'createdAt' => $this->created_at,

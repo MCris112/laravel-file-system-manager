@@ -4,6 +4,7 @@ namespace MCris112\FileSystemManager;
 
 use Illuminate\Database\Eloquent\Model;
 use MCris112\FileSystemManager\Models\FmFile;
+use MCris112\FileSystemManager\Models\FmMetadata;
 use MCris112\FileSystemManager\Models\Metadata\FmMetadataInt;
 use MCris112\FileSystemManager\Models\Metadata\FmMetadataVarchar;
 
@@ -24,40 +25,21 @@ class FmFileContentMetadata
      */
     public function save(FmFile $model): void
     {
-        $this->saveInt($model);
-        $this->saveVarchar($model);
-    }
-
-    private function saveInt(FmFile $model): void
-    {
-        $meta = [
+        $data = [
             'width' => $this->width,
             'height' => $this->height
         ];
-        $data = $this->newMetadataModels($meta, FmMetadataInt::class);
 
-        if($data) $model->metadataInt()->saveMany($data);
-    }
-    private function saveVarchar(FmFile $model): void
-    {
-        $meta = [];
-        $data = $this->newMetadataModels($meta, FmMetadataVarchar::class);
-
-        if($data) $model->metadataVarchar()->saveMany($data);
-    }
-
-    private function newMetadataModels(array $data, string $model): array
-    {
-        $metas = [];
+        $metadata = [];
 
         foreach ($data as $key => $value)
         {
-            $metas[] = new $model([
+            $metadata[] = new FmMetadata([
                 'attr' => $key,
                 'value' => $value
             ]);
         }
 
-        return $metas;
+        $model->metadata()->saveMany($metadata);
     }
 }

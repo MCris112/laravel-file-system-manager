@@ -15,33 +15,44 @@ return new class extends Migration
 
     public function up(): void
     {
-        foreach ($this->types as $type)
-        {
-            Schema::create( 'fm_metadata_'.$type, function (Blueprint $table) use ($type){
-                $table->id();
-                $table->unsignedBigInteger('fm_file_id')->nullable();
+        Schema::create( 'fm_metadata', function (Blueprint $table){
+            $table->id();
+            $table->unsignedBigInteger('fm_file_id')->nullable();
 
-                $table->string('attr');
+            $table->string('attr');
 
-                switch ($type)
-                {
-                    case 'int':
-                        $table->integer('value');
-                        break;
-                    case 'datetime':
-                        $table->dateTime('value');
-                        break;
-                    case 'decimal':
-                        $table->decimal('value');
-                        break;
-                    default:
-                        $table->string('value');
-                }
+            $table->string('value');
 
-
-                $table->foreign('fm_file_id')->references('id')->on('fm_files');
-            });
-        }
+            $table->foreign('fm_file_id')->references('id')->on('fm_files');
+        });
+//
+//        foreach ($this->types as $type)
+//        {
+//            Schema::create( 'fm_metadata_'.$type, function (Blueprint $table) use ($type){
+//                $table->id();
+//                $table->unsignedBigInteger('fm_file_id')->nullable();
+//
+//                $table->string('attr');
+//
+//                switch ($type)
+//                {
+//                    case 'int':
+//                        $table->integer('value');
+//                        break;
+//                    case 'datetime':
+//                        $table->dateTime('value');
+//                        break;
+//                    case 'decimal':
+//                        $table->decimal('value');
+//                        break;
+//                    default:
+//                        $table->string('value');
+//                }
+//
+//
+//                $table->foreign('fm_file_id')->references('id')->on('fm_files');
+//            });
+//        }
     }
 
 };

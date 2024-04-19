@@ -8,6 +8,21 @@ return [
             "s3" => env('FM_STORAGE_S3_SIZE', 0),
         ],
     ],
+
+    "sizes" => [
+        'video' => [
+            "width" => 1200,
+            "height" => 720,
+        ],
+        'thumbnail' => [
+            "width" => 600,
+            "height" => 400,
+        ],
+        'square' => [
+            "width" => 600,
+            "height" => 600,
+        ]
+    ],
     /********************************
      *
      *  This is required to get authenticated user at StorageController

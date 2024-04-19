@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('path_folder');
             $table->string('disk');
             $table->integer('size');
+            $table->string('size_type');
             $table->string('type');
             $table->string('mimetype');
             $table->string('extension');

@@ -14,7 +14,7 @@ class FileManager extends AbstractManager
 {
     public function search($name, ?int $perPage = null): \Illuminate\Contracts\Pagination\LengthAwarePaginator
     {
-        return FmFile::whereDisk($this->disk)->where( function($q)use($name) {
+        return FmFile::whereDisk($this->disk)->whereIsParent()->where( function($q)use($name) {
             return $q->where('name', 'LIKE', '%'.$name.'%')->orWhere('path_filename', 'LIKE', '%'.str($name)->slug().'%' );
         })->paginate();
     }

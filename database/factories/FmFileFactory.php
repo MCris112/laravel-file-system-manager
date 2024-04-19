@@ -3,6 +3,7 @@
 namespace MCris112\FileSystemManager\Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
+use MCris112\FileSystemManager\Enums\FmFileSize;
 use MCris112\FileSystemManager\Enums\FmFileType;
 use MCris112\FileSystemManager\Models\FmFile;
 
@@ -22,9 +23,11 @@ class FmFileFactory extends Factory
             'path_folder' => 'test/',
             'disk' => fake()->randomElement( config('filesystems.disks',) )['driver'],
             'size' => fake()->numberBetween(9000000, 1000000),
+            'size_type' => FmFileSize::FULL,
             'type' => fake()->randomElement(FmFileType::cases())->value,
             'mimetype' => 'image/jpeg',
             'extension' => 'jpg',
+
 
             'is_public' => fake()->boolean(),
             'created_by' => 1

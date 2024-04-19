@@ -2,10 +2,12 @@
 
 namespace MCris112\FileSystemManager;
 
-use App\Models\User;
+use Illuminate\Http\File;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use MCris112\FileSystemManager\Base\FileSystemManagerBase;
+use MCris112\FileSystemManager\Enums\FmFileSize;
 use MCris112\FileSystemManager\Exceptions\AvatarManagerIsNotSet;
 use MCris112\FileSystemManager\Manager\AvatarFileSystemManager;
 use MCris112\FileSystemManager\Manager\FileManager;
@@ -78,7 +80,8 @@ class FileSystemManagerService extends FileSystemManagerBase
 
     /**
      * Save the file information
-     * @param UploadedFile $file
+     * @param UploadedFile|string $file
+     * @param FmFileSize $size
      * @param bool $isPublic
      * @param int $createdBy
      * @param string $folder
@@ -87,26 +90,28 @@ class FileSystemManagerService extends FileSystemManagerBase
      * @return FmFile
      * @throws \Throwable
      */
-    public function save(UploadedFile $file, bool $isPublic, int $createdBy, string $folder, ?string $name, ?\Closure $doAfterSaveFile = null): FmFile
+    public function save(UploadedFile|string $file, FmFileSize $size, bool $isPublic, int $createdBy, string $folder, ?string $name, ?int $parentId = null, ?\Closure $doAfterSaveFile = null): FmFile
     {
         $fileContent = new FmFileContent($file, $folder, $name, $this->disk);
          // Save the file and get the model
-        $model = Db::transaction( function () use ($isPublic, $fileContent, $file, $createdBy) {
+        $model = Db::transaction( function () use ($isPublic, $fileContent, $file, $createdBy, $size, $parentId) {
             $model = FmFile::saveAsModel(
                 $fileContent->getName(),
                 $fileContent->getDisk(),
                 $fileContent->getFolder(),
                 $fileContent->getFilename(),
                 $fileContent->getSize(),
+                $size,
                 $fileContent->getFileType(),
                 $fileContent->getMimeType(),
                 $fileContent->getExtension(),
                 $isPublic,
                 $createdBy,
-                $fileContent->getMetadata()
+                $fileContent->getMetadata(),
+                $parentId
             );
 
-            $file->storeAs($fileContent->getFullPath(), [
+            $fileContent->getFile()->storeAs($fileContent->getFullPath(), [
                 'disk' => $this->disk,
             ]);
 
@@ -184,5 +189,38 @@ class FileSystemManagerService extends FileSystemManagerBase
         }
 
         return $number * (1024 ** $exponent);
+    }
+
+    public function fromBase64(string $base64File): UploadedFile
+    {
+
+        // Get file data base64 string
+        $fileData = base64_decode(Arr::last(explode(',', $base64File)));
+
+        // Create temp file and get its absolute path
+        $tempFile = tmpfile();
+        $tempFilePath = stream_get_meta_data($tempFile)['uri'];
+
+        // Save file data in file
+        file_put_contents($tempFilePath, $fileData);
+
+        $tempFileObject = new File($tempFilePath);
+
+        $file = new UploadedFile(
+            $tempFileObject->getPathname(),
+            $tempFileObject->getFilename(),
+            $tempFileObject->getMimeType(),
+            0,
+            true // Mark it as test, since the file isn't from real HTTP POST.
+        );
+
+        // Close this file after response is sent.
+        // Closing the file will cause to remove it from temp director!
+        app()->terminating(function () use ($tempFile) {
+            fclose($tempFile);
+        });
+
+        // return UploadedFile object
+        return $file;
     }
 }
