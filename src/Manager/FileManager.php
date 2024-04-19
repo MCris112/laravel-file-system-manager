@@ -8,9 +8,12 @@ use Illuminate\Support\Facades\DB;
 use MCris112\FileSystemManager\Base\AbstractManager;
 use MCris112\FileSystemManager\Enums\FmFileSize;
 use MCris112\FileSystemManager\Exceptions\FmFileNotFoundException;
+use MCris112\FileSystemManager\Exceptions\NotEnoughStorageException;
+use MCris112\FileSystemManager\Facades\FileSystemManager;
 use MCris112\FileSystemManager\FmFileContent;
 use MCris112\FileSystemManager\Models\FmFolder;
 use MCris112\FileSystemManager\Models\FmFile;
+use Throwable;
 
 class FileManager extends AbstractManager
 {
@@ -88,11 +91,15 @@ class FileManager extends AbstractManager
      * @param ?string $name If name is not set, It will be the filename
      * @param \Closure|null $doAfterSaveFile Do something after save function( FmFileContent $fileContent, FmFile $model)
      * @return FmFile
-     * @throws \Throwable
+     * @throws NotEnoughStorageException
+     * @throws Throwable
      */
-    public function save(UploadedFile|string $file, FmFileSize|string $size, bool $isPublic, int $createdBy, string $folder, ?string $name, ?int $parentId = null, ?\Closure $doAfterSaveFile = null): FmFile
+    public function save(UploadedFile|string $file, FmFileSize|string $size, bool $isPublic, int $createdBy, string $folder, ?string $name, ?\Closure $doAfterSaveFile = null): FmFile
     {
         $fileContent = new FmFileContent($file, $folder, $name, $this->disk);
+
+        if($fileContent->getSize() > FileSystemManager::disk($this->disk)->left()) throw new NotEnoughStorageException;
+
         // Save the file and get the model
         $model = Db::transaction( function () use ($isPublic, $fileContent, $file, $createdBy, $size) {
             $model = FmFile::saveAsModel(

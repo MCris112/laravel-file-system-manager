@@ -41,7 +41,7 @@ return [
      *
      */
     'auth' => [
-        'user' => fn() => auth()->user()
+        'user' => fn() => auth()->user() // ?? auth('api)->user()
     ],
 
     /********************************

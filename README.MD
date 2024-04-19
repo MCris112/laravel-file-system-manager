@@ -14,7 +14,7 @@
 # Table of Contents
 ---
 1. [Installation](#installation)
-   1. [Configuration](#configuration)
+   * [Configuration](#configuration)
 2. [Getting Started](#getting-started)
    1. [Save a file](#save-a-file)
    2. [Use a different disk manager](#use-a-different-disk-manager)
@@ -25,8 +25,11 @@
    4. [From Base 64](#from-base-64)
    5. [Collection](#collection)
 4. [Traits](#traits)
-   1. [Resource](#resource)
-      1. [Customize FmFile resource transformation](#customize-resource-transformation)
+   * [Resource](#resource)
+     * [Customize FmFile resource transformation](#customize-resource-transformation)
+   * [Has an Image](#has-an-image)
+   * [Has image variations](#has-image-variations)
+   * [FmPagination](#fmpagination)
 5. [Category](#category)
    1. [Folder](#folder)
       * [Create Folder](#create-folder)
@@ -44,6 +47,7 @@
       2. [Used](#used)
       3. [Url](#avatar-url)
       4. [Create Avatar](#create-avatar)
+
 # Installation
 Install the package with the command
 **[Composer](https://getcomposer.org/):**
@@ -74,8 +78,30 @@ return [
             //"s3" => env('FM_STORAGE_S3_SIZE', 0),
         ],
     ],
+
+    /********************************
+     *
+     *  This is required to get authenticated user at StorageController
+     *  to check if the user can view the file
+     *
+     */
+    'auth' => [
+        'user' => fn() => auth()->user() // ?? auth('api)->user()
+    ],
 ```
 
+At Users model, need to add `CanViewFmFilePrivate`, this is necessary for check if user can view the current file selected on route `'.../storage/{disk}/{path}'`
+
+```php
+use MCris112\FileSystemManager\Traits\CanViewFmFilePrivate;
+
+class User extends Authenticatable
+{
+    use CanViewFmFilePrivate;
+
+    //...
+}
+```
 
 # Getting Started
 ## Save a file
@@ -273,7 +299,87 @@ class ProductResource extends JsonResource
     protected string $fmImageResource = FmFileListResource::class;
 }
 ```
+## Has an Image
+If you want that a model has an image, you can define that relationship with trait and table
 
+Model
+```php
+use MCris112\FileSystemManager\Traits\HasFmImage;
+
+class SomeModel extends Model
+{
+    use HasFmImage;
+}
+```
+
+Migration
+```php
+use MCris112\FileSystemManager\Facades\FileSystemManagerTable;
+
+public function up(): void
+{
+    Schema::create('some_model', function (Blueprint $table) {
+        //This will define the relationship on table
+        FileSystemManagerTable::hasImage($table);
+    });
+}
+```
+
+## Has image variations
+If has different images variations
+```php
+use MCris112\FileSystemManager\Traits\HasFmImageVariations;
+use MCris112\FileSystemManager\Enums\FmFileSize;
+
+class Product extends Model
+{
+    use HasFmImageVariations;
+}
+
+// Can load all image variations
+Product::with('fmimages')->get();
+$prodcut->load('fmimages');
+
+//Just load specific image variation
+Product::withThumbnail()->get()
+Product::withSquareImage()->get()
+
+/**
+ * Load all or specific image size
+ * @param array|string|FmFileSize|null $sizes can be '*'|null for load all image sizes or an array for load specific image sizes
+ */
+Product::withFmImageSize(FmFileSize::VIDEO)->get()
+```
+
+
+
+## FmPagination
+```php
+use \Illuminate\Http\Resources\Json\ResourceCollection;
+use MCris112\FileSystemManager\Traits\FmPagination;
+
+class YourResource extends ResourceCollection
+{
+    use FmPagination;
+
+    public function toArray(\Illuminate\Http\Request $request){
+        return [
+            "data" => $this->collection,
+            // now you can use this function to retrieve easily the pagination data
+            "pagination" => $this->paginate();
+        ];
+    }
+}
+
+
+// FmPagination does
+return [
+    'total' => $this->total(),
+    'perPage' => $this->perPage(),
+    'currentPage' => $this->currentPage(),
+    'totalPages' => $this->lastPage()
+];
+```
 # Category
 
 ## Folder

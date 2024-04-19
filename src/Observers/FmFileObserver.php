@@ -47,6 +47,7 @@ class FmFileObserver
     public function forceDeleted(FmFile $model): void
     {
         $this->updateCached($model);
+        \Storage::disk($model->disk)->delete($model->getPath());
     }
 
     private function updateCached(FmFile $model)

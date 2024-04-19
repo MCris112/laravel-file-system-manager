@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Storage;
 use Intervention\Image\ImageManager;
 use MCris112\FileSystemManager\Base\FileSystemManagerBase;
 use MCris112\FileSystemManager\Exceptions\AvatarManagerIsNotSet;
+use MCris112\FileSystemManager\Exceptions\NotEnoughStorageException;
+use MCris112\FileSystemManager\Facades\FileSystemManager;
 use Symfony\Component\HttpKernel\Attribute\Cache;
 
 class AvatarFileSystemManager extends FileSystemManagerBase
@@ -31,30 +33,31 @@ class AvatarFileSystemManager extends FileSystemManagerBase
     /**
      * @param UploadedFile|null $file
      * @return User
+     * @throws NotEnoughStorageException
      */
     public function create(?UploadedFile $file = null): User
     {
         $storage = Storage::disk($this->disk);
         $manager = ImageManager::gd();
         $quality = config('filesystemmanager.user.quality');
-        $fileCreated = false;
+        $fileExistedBefore = false;
+
+        if( $storage->exists($this->getPath()) ) $fileExistedBefore = true;
 
         if($file)
         {
             $image = $manager->read($file);
-
             $image = $image->cover(config('filesystemmanager.user.width'), config('filesystemmanager.user.height'));
-
-            $storage->put($this->getPath(), $image->toJpeg($quality)->toFilePointer());
-            $fileCreated = true;
         }else{
             $image = $manager->read(
                 file_get_contents(config('filesystemmanager.user.generatorUrl').urlencode($this->user->getName()).'+'.urlencode($this->user->getLastname()))
             );
-
-            $storage->put($this->getPath(), $image->toJpeg($quality)->toFilePointer());
-            $fileCreated = true;
         }
+
+        $jpg = $image->toJpeg($quality);
+        if($jpg->size() > FileSystemManager::disk($this->disk)->left()) throw new NotEnoughStorageException;
+
+        $storage->put($this->getPath(), $jpg->toFilePointer());
 
 
         $this->user->avatar_disk = $this->disk;
@@ -65,7 +68,7 @@ class AvatarFileSystemManager extends FileSystemManagerBase
             \Cache::forget('fm_storage_avatars_used');
         }catch(\Exception $e)
         {
-            if($fileCreated) $storage->delete($this->getPath());
+            if(!$fileExistedBefore) $storage->delete($this->getPath());
         }
 
         return $this->user;
