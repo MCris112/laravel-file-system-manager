@@ -50,7 +50,6 @@ class FileSystemManagerService extends FileSystemManagerBase
         /** @var string|int $value */
         $value = config('filesystemmanager.storage.size.'.$this->disk);
 
-        dump($this->_convertToBytes($value));
         if(is_string($value))
         return $this->_convertToBytes($value);
 

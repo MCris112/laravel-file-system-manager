@@ -37,7 +37,7 @@ use MCris112\FileSystemManager\Observers\FmFileObserver;
  * @property string $extension
  * @property int $is_public
  * @property int|null $parent_id
- * @property int $created_by
+ * @property int|null $created_by
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read \MCris112\FileSystemManager\Models\FmFolder|null $folder
@@ -68,7 +68,13 @@ use MCris112\FileSystemManager\Observers\FmFileObserver;
  * @method static Builder|FmFile whereSizeType($value)
  * @method static Builder|FmFile whereType($value)
  * @method static Builder|FmFile whereUpdatedAt($value)
- * @method static Builder|FmFile withVariation(\MCris112\FileSystemManager\Enums\FmFileSize $size)
+ * @method static Builder|FmFile withVariation(\MCris112\FileSystemManager\Enums\FmFileSize|array|string $size)
+ * @method static FmFileCollection<int, static> all($columns = ['*'])
+ * @method static FmFileCollection<int, static> get($columns = ['*'])
+ * @method static FmFileCollection<int, static> all($columns = ['*'])
+ * @method static FmFileCollection<int, static> get($columns = ['*'])
+ * @method static FmFileCollection<int, static> all($columns = ['*'])
+ * @method static FmFileCollection<int, static> get($columns = ['*'])
  * @mixin \Eloquent
  */
 #[ObservedBy([FmFileObserver::class])]
