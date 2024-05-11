@@ -115,7 +115,7 @@ class FileManager extends AbstractManager
                 $isPublic,
                 $createdBy,
                 $fileContent->getMetadata(),
-                $this->parent->getKey()
+                $this->parent?->getKey()
             );
 
             $fileContent->getFile()->storeAs($fileContent->getFullPath(), [
