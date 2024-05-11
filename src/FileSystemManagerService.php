@@ -90,7 +90,7 @@ class FileSystemManagerService extends FileSystemManagerBase
     {
         return new FileManagerContent(
             FmFolder::whereDisk($this->disk)->whereIsParent()->withMetadata()->get(),
-            FmFile::whereDisk($this->disk)->whereIsParent()->whereDoesntHave('folder')->paginate($load)
+            FmFile::whereDisk($this->disk)->whereIsParent()->whereDoesntHave('folder')->orderByDesc('created_at')->paginate($load)
         );
     }
 
