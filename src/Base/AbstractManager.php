@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 abstract class AbstractManager extends FileSystemManagerBase
 {
-    protected Model|null $parent;
+    protected Model|null $parent = null;
 
     public function __construct(string $disk, Model|int|null $parent = null)
     {
