@@ -21,7 +21,7 @@ abstract class AbstractManager extends FileSystemManagerBase
 
     abstract public function find(int $id): Model;
 
-    public function parent(int|null $parent): static
+    public function parent(Model|int|null $parent): static
     {
         if(!$parent)
         {
