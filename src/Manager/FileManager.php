@@ -101,6 +101,7 @@ class FileManager extends AbstractManager
 
         // Save the file and get the model
         $model = Db::transaction( function () use ($isPublic, $fileContent, $file, $createdBy, $size) {
+
             $model = FmFile::saveAsModel(
                 $fileContent->getName(),
                 $fileContent->getDisk(),

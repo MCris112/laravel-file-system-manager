@@ -23,11 +23,8 @@ class FmFileContent
 
     public function __construct(UploadedFile|string $content, private string $folder, private ?string $name = null, private readonly ?string $disk = null)
     {
-
-
         if(!$content instanceof UploadedFile)
         {
-
             $this->file = FileSystemManager::fromBase64($content);
         }else{
             $this->file = $content;
@@ -73,9 +70,13 @@ class FmFileContent
      */
     public function getFilename(): string
     {
-        return strtolower(\Str::slug($this->name)).'.'.$this->extension;
+        return now()->timestamp."-". strtolower(\Str::slug($this->name)).'.'.$this->extension;
     }
 
+    /**
+     * Retrieve the full path
+     * @return string
+     */
     public function getFullPath()
     {
         return $this->folder.$this->getFilename();
