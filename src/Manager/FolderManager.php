@@ -140,4 +140,9 @@ class FolderManager extends AbstractManager
             $folder->files()->delete();
         });
     }
+
+    public function get(): FmFolder|null
+    {
+        return parent::get();
+    }
 }

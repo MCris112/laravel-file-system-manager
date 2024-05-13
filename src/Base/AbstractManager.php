@@ -12,15 +12,7 @@ abstract class AbstractManager extends FileSystemManagerBase
     {
         parent::__construct($disk);
 
-        if(!$parent) return;
-
-        if($parent instanceof Model)
-        {
-            $this->parent = $parent;
-            return;
-        }
-
-        $this->parent = $this->find($parent);
+        $this->parent($parent);
     }
 
 //    abstract public function content(?int $perPage = null): \Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -31,8 +23,26 @@ abstract class AbstractManager extends FileSystemManagerBase
 
     public function parent(int|null $parent): static
     {
-        return new static($this->disk, $parent);
+        if(!$parent)
+        {
+            $this->parent = $parent;
+            return $this;
+        }
+
+        if($parent instanceof Model)
+        {
+            $this->parent = $parent;
+            return $this;
+        }
+
+        $this->parent = $this->find($parent);
+        return $this;
     }
 
     abstract function delete(): void;
+
+    public function get()
+    {
+        return $this->parent;
+    }
 }
