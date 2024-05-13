@@ -22,7 +22,7 @@ class FileManager extends AbstractManager
         parent::__construct($disk, $parent);
     }
 
-    public function parent(FmFile|int|null $parent): static
+    public function parent(FmFile|int|null|Model $parent): static
     {
         return parent::parent($parent);
     }

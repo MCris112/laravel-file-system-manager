@@ -18,7 +18,7 @@ class FolderManager extends AbstractManager
         parent::__construct($disk, $parent);
     }
 
-    public function parent(FmFolder|int|null $parent): static
+    public function parent(FmFolder|int|null|Model $parent): static
     {
         return parent::parent($parent);
     }
