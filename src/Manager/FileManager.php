@@ -155,7 +155,7 @@ class FileManager extends AbstractManager
      * @param int $height
      * @return FmFile
      */
-    public function variation(FmFileSize|string $sizeType,  int|null $createdBy = null,  int $width = 0, int $height = 0): FmFile
+    public function variation(FmFileSize|string $sizeType,  int|null $createdBy = null, int $quality = 8,  int $width = 0, int $height = 0): FmFile
     {
         if(!$this->parent) throw new \InvalidArgumentException("The file must be set");
 
@@ -168,6 +168,6 @@ class FileManager extends AbstractManager
         $thumbnail = $this->parent->variations()->where("size_type", FmFileSize::THUMBNAIL)->first();
         if($thumbnail) return $thumbnail;
 
-        return $this->parent->variation($size, $createdBy ?? $this->parent->created_by, $width, $height );
+        return $this->parent->variation($size, $createdBy ?? $this->parent->created_by, $quality, $width, $height );
     }
 }

@@ -204,7 +204,7 @@ class FmFile extends Model
     /**
      * @throws \Throwable
      */
-    public function variation(FmFileSize|string $size, int $createdBy, int $width = 0, int $height = 0)
+    public function variation(FmFileSize|string $size, int $createdBy, int $quality = 8, int $width = 0, int $height = 0)
     {
         if($this->type != FmFileType::IMAGE->value) throw new \InvalidArgumentException("File is not an Image");
         if( $size instanceof FmFileSize && $size == FmFileSize::FULL ) throw new \InvalidArgumentException("This has to be a variation");
@@ -230,7 +230,12 @@ class FmFile extends Model
         );
 
         return FileSystemManager::file($this)->save(
-            $image->encode(new AutoEncoder($this->extension))->toDataUri(),
+            $image->encode(
+                new AutoEncoder(
+                    mediaType: $this->extension,
+                    quality: $quality,
+                    ),
+                )->toDataUri(),
             $size,
             $this->is_public,
             $createdBy,
