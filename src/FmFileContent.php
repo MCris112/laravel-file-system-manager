@@ -47,6 +47,8 @@ class FmFileContent
                 $manager->width(),
                 $manager->height()
             );
+        }else{
+            $this->metadata = new FmFileContentMetadata( 0, 0);
         }
     }
 

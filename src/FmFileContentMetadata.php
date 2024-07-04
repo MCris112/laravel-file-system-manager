@@ -25,6 +25,9 @@ class FmFileContentMetadata
      */
     public function save(FmFile $model): void
     {
+
+        if( $this->width == 0 || $this->height == 0 ) return;
+
         $data = [
             'width' => $this->width,
             'height' => $this->height
