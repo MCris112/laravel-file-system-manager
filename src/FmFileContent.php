@@ -11,6 +11,8 @@ use MCris112\FileSystemManager\Models\FmFile;
 
 class FmFileContent
 {
+    private string $filename;
+
     private string $mimeType;
 
     private string $extension;
@@ -34,10 +36,13 @@ class FmFileContent
         if(!$this->name)
         $this->name = $this->file->getClientOriginalName();
 
+
         $this->size = $this->file->getSize();
         $this->mimeType = $this->file->getClientMimeType();
 
         $this->extension = explode('/', $this->mimeType )[1];
+
+        $this->filename = now()->timestamp."-". strtolower(\Str::slug($this->name)).'.'.$this->extension;
 
         if ( $this->getFileType() == FmFileType::IMAGE )
         {
@@ -72,7 +77,7 @@ class FmFileContent
      */
     public function getFilename(): string
     {
-        return now()->timestamp."-". strtolower(\Str::slug($this->name)).'.'.$this->extension;
+        return $this->filename;
     }
 
     /**
